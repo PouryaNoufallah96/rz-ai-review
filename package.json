@@ -1,0 +1,34 @@
+{
+  "name": "rz-code-review",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "GitLab MR reviewer bot powered by Liara AI",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node api.js && node src/index.js",
+    "dev": "node api.js && node --watch src/index.js",
+    "review": "node src/cli.js review",
+    "learn": "node src/cli.js learn",
+    "status": "node src/cli.js status",
+    "lint": "eslint src",
+    "format": "prettier --write \"src/**/*.js\""
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@gitbeaker/rest": "^40.5.1",
+    "@fastify/sensible": "^5.6.0",
+    "@fastify/static": "^7.0.4",
+    "dotenv": "^16.4.5",
+    "fastify": "^4.28.1",
+    "openai": "^4.67.3",
+    "pino": "^9.4.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "eslint": "^9.12.0",
+    "prettier": "^3.3.3"
+  }
+}
