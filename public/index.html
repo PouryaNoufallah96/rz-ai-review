@@ -1,0 +1,1168 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Review Bot</title>
+    <style>
+      :root {
+        --bg-0: #0a0f1a;
+        --bg-1: #0f1623;
+        --bg-2: #151d2e;
+        --bg-3: #1c2640;
+        --surface: rgba(255, 255, 255, 0.04);
+        --surface-2: rgba(255, 255, 255, 0.06);
+        --surface-3: rgba(255, 255, 255, 0.09);
+        --border: rgba(255, 255, 255, 0.08);
+        --border-strong: rgba(255, 255, 255, 0.16);
+        --text: #f3f6fa;
+        --text-2: #b9c4d4;
+        --muted: #7a8aa0;
+        --accent: #6aa9ff;
+        --accent-2: #4a82d6;
+        --accent-glow: rgba(106, 169, 255, 0.35);
+        --ok: #4ec46e;
+        --warn: #e0a458;
+        --err: #f06a6a;
+        --info: #a89cff;
+        --radius: 14px;
+        --radius-sm: 10px;
+        --radius-lg: 20px;
+        --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.25);
+        --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.45);
+      }
+
+      * { box-sizing: border-box; }
+      html, body {
+        margin: 0;
+        height: 100%;
+        font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        color: var(--text);
+        background:
+          radial-gradient(1200px 700px at -10% -20%, rgba(106, 169, 255, 0.13), transparent 60%),
+          radial-gradient(900px 500px at 110% 110%, rgba(168, 156, 255, 0.10), transparent 60%),
+          linear-gradient(180deg, var(--bg-0), var(--bg-1));
+        overflow: hidden;
+        font-size: 14px;
+        -webkit-font-smoothing: antialiased;
+      }
+      button, input, select, textarea { font: inherit; color: inherit; }
+
+      .app {
+        display: grid;
+        grid-template-columns: 280px 1fr;
+        height: 100vh;
+        height: 100dvh;
+        max-width: 1280px;
+        margin: 0 auto;
+        background: rgba(15, 22, 35, 0.6);
+        backdrop-filter: blur(24px) saturate(140%);
+        border-left: 1px solid var(--border);
+        border-right: 1px solid var(--border);
+      }
+
+      /* ============ SIDEBAR ============ */
+      aside {
+        display: flex;
+        flex-direction: column;
+        background: rgba(10, 15, 26, 0.55);
+        border-right: 1px solid var(--border);
+        min-height: 0;
+      }
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 18px 18px 14px;
+      }
+      .logo {
+        width: 38px; height: 38px;
+        border-radius: 11px;
+        background: linear-gradient(135deg, var(--accent), #a06ad8);
+        display: grid; place-items: center;
+        font-weight: 700; font-size: 15px;
+        box-shadow: 0 4px 16px var(--accent-glow);
+      }
+      .brand-name { font-weight: 600; font-size: 15px; line-height: 1.2; }
+      .brand-sub { font-size: 11.5px; color: var(--muted); margin-top: 2px; }
+
+      .new-btn {
+        margin: 4px 14px 14px;
+        padding: 11px 14px;
+        background: linear-gradient(135deg, var(--accent), var(--accent-2));
+        color: white;
+        border: 1px solid rgba(106, 169, 255, 0.4);
+        border-radius: var(--radius);
+        font-weight: 600;
+        font-size: 13.5px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        box-shadow: 0 4px 16px var(--accent-glow);
+        transition: transform .12s, box-shadow .15s;
+      }
+      .new-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 22px var(--accent-glow); }
+
+      .side-section {
+        padding: 14px 18px 6px;
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+      }
+
+      .recent-list {
+        flex: 1;
+        overflow-y: auto;
+        padding: 0 8px 12px;
+        min-height: 0;
+      }
+      .recent-list::-webkit-scrollbar { width: 6px; }
+      .recent-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 3px; }
+
+      .recent-item {
+        display: grid;
+        grid-template-columns: 32px 1fr auto;
+        align-items: center;
+        gap: 10px;
+        padding: 9px 10px;
+        border-radius: var(--radius-sm);
+        cursor: pointer;
+        transition: background .12s;
+        margin: 1px 0;
+      }
+      .recent-item:hover { background: var(--surface-2); }
+      .recent-item.empty {
+        cursor: default;
+        color: var(--muted);
+        font-size: 12.5px;
+        padding: 14px 10px;
+        text-align: center;
+      }
+      .recent-item.empty:hover { background: transparent; }
+      .recent-avatar {
+        width: 32px; height: 32px;
+        border-radius: 9px;
+        background: var(--surface-2);
+        border: 1px solid var(--border);
+        display: grid; place-items: center;
+        font-size: 13px;
+      }
+      .recent-meta { min-width: 0; }
+      .recent-title {
+        font-size: 13px; font-weight: 500;
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      }
+      .recent-sub {
+        font-size: 11.5px; color: var(--muted);
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      }
+      .recent-time { font-size: 10.5px; color: var(--muted); }
+
+      .side-foot {
+        padding: 10px 18px 14px;
+        border-top: 1px solid var(--border);
+        font-size: 11.5px;
+        color: var(--muted);
+        display: flex; justify-content: space-between; align-items: center;
+      }
+      .side-foot a { color: var(--text-2); text-decoration: none; }
+      .side-foot a:hover { color: var(--accent); }
+
+      /* ============ MAIN ============ */
+      main { display: grid; grid-template-rows: 60px 1fr; min-height: 0; min-width: 0; }
+      .topbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 24px;
+        border-bottom: 1px solid var(--border);
+        background: rgba(15, 22, 35, 0.4);
+      }
+      .crumbs { font-size: 13.5px; color: var(--text-2); display: flex; align-items: center; gap: 8px; }
+      .crumbs .sep { color: var(--muted); }
+      .crumbs .current { color: var(--text); font-weight: 500; }
+
+      .top-actions { display: flex; gap: 8px; }
+      .icon-btn {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        color: var(--text-2);
+        width: 34px; height: 34px;
+        border-radius: var(--radius-sm);
+        cursor: pointer;
+        display: grid; place-items: center;
+        font-size: 14px;
+        transition: background .12s, color .12s;
+      }
+      .icon-btn:hover { background: var(--surface-3); color: var(--text); }
+
+      .content {
+        overflow-y: auto;
+        min-height: 0;
+        padding: 24px 28px 32px;
+      }
+      .content::-webkit-scrollbar { width: 8px; }
+      .content::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 4px; }
+
+      /* ============ HERO / EMPTY ============ */
+      .hero {
+        max-width: 640px;
+        margin: 48px auto 0;
+        text-align: center;
+      }
+      .hero h1 {
+        font-size: 28px;
+        font-weight: 600;
+        margin: 18px 0 8px;
+        letter-spacing: -0.01em;
+      }
+      .hero p { color: var(--text-2); font-size: 14.5px; line-height: 1.55; margin: 0 auto; max-width: 480px; }
+      .hero-icon {
+        width: 64px; height: 64px;
+        margin: 0 auto;
+        border-radius: 18px;
+        background: linear-gradient(135deg, var(--accent), #a06ad8);
+        display: grid; place-items: center;
+        font-size: 28px;
+        box-shadow: 0 8px 32px var(--accent-glow);
+      }
+
+      .quick-actions {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 12px;
+        margin-top: 28px;
+      }
+      .quick {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 18px 16px;
+        text-align: left;
+        cursor: pointer;
+        transition: background .12s, border-color .12s, transform .12s;
+      }
+      .quick:hover {
+        background: var(--surface-2);
+        border-color: var(--border-strong);
+        transform: translateY(-2px);
+      }
+      .quick .q-ic { font-size: 20px; margin-bottom: 10px; }
+      .quick .q-title { font-weight: 600; font-size: 13.5px; margin-bottom: 3px; }
+      .quick .q-sub { font-size: 12px; color: var(--muted); line-height: 1.4; }
+
+      /* ============ FORM CARD (wizard replacement) ============ */
+      .card {
+        max-width: 640px;
+        margin: 8px auto 0;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        padding: 24px 24px 20px;
+        box-shadow: var(--shadow-lg);
+      }
+      .card-head {
+        display: flex; align-items: center; gap: 12px;
+        margin-bottom: 18px;
+      }
+      .card-icon {
+        width: 38px; height: 38px;
+        border-radius: 11px;
+        background: var(--surface-2);
+        border: 1px solid var(--border);
+        display: grid; place-items: center;
+        font-size: 17px;
+      }
+      .card-icon.primary {
+        background: linear-gradient(135deg, var(--accent), var(--accent-2));
+        border-color: transparent;
+        color: white;
+      }
+      .card-head h2 { margin: 0; font-size: 16px; font-weight: 600; }
+      .card-head .sub { font-size: 12.5px; color: var(--muted); margin-top: 2px; }
+
+      .segmented {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        background: var(--surface-2);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        padding: 3px;
+        margin-bottom: 18px;
+      }
+      .seg {
+        background: transparent;
+        border: none;
+        padding: 9px 10px;
+        border-radius: 8px;
+        font-size: 13px;
+        color: var(--text-2);
+        cursor: pointer;
+        display: flex; align-items: center; justify-content: center; gap: 6px;
+        transition: background .15s, color .15s;
+      }
+      .seg.active {
+        background: var(--bg-3);
+        color: var(--text);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+      }
+
+      .field { margin-bottom: 14px; }
+      .field label {
+        display: block;
+        font-size: 12px;
+        font-weight: 500;
+        color: var(--text-2);
+        margin-bottom: 6px;
+      }
+      .field input {
+        width: 100%;
+        background: var(--bg-2);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        padding: 11px 14px;
+        font-size: 14px;
+        outline: none;
+        transition: border-color .15s, box-shadow .15s;
+      }
+      .field input:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px var(--accent-glow);
+      }
+      .field input::placeholder { color: var(--muted); }
+      .field .hint { font-size: 11.5px; color: var(--muted); margin-top: 5px; }
+
+      .chips { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+      .chip {
+        background: var(--surface-2);
+        border: 1px solid var(--border);
+        color: var(--text-2);
+        padding: 4px 10px;
+        border-radius: 999px;
+        font-size: 12px;
+        cursor: pointer;
+        transition: background .12s, color .12s, border-color .12s;
+      }
+      .chip:hover {
+        background: var(--surface-3);
+        color: var(--text);
+        border-color: var(--border-strong);
+      }
+
+      .form-actions {
+        display: flex; gap: 10px; justify-content: flex-end;
+        margin-top: 6px;
+      }
+      .btn {
+        background: var(--surface-2);
+        border: 1px solid var(--border);
+        color: var(--text);
+        padding: 10px 16px;
+        border-radius: var(--radius-sm);
+        font-size: 13px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: background .12s, border-color .12s;
+      }
+      .btn:hover { background: var(--surface-3); border-color: var(--border-strong); }
+      .btn.primary {
+        background: linear-gradient(135deg, var(--accent), var(--accent-2));
+        border-color: transparent;
+        box-shadow: 0 4px 16px var(--accent-glow);
+      }
+      .btn.primary:hover { box-shadow: 0 6px 22px var(--accent-glow); }
+      .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+      .btn.ghost { background: transparent; border-color: transparent; color: var(--muted); }
+      .btn.ghost:hover { background: var(--surface); color: var(--text); }
+
+      /* ============ RESULT ============ */
+      .result { max-width: 720px; margin: 0 auto; display: flex; flex-direction: column; gap: 14px; }
+      .result-head {
+        display: flex; align-items: center; gap: 14px;
+        margin-bottom: 4px;
+      }
+      .result-head h2 { margin: 0; font-size: 18px; font-weight: 600; }
+      .result-head .sub { color: var(--muted); font-size: 12.5px; margin-top: 3px; }
+
+      .stat-row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 10px;
+      }
+      .stat {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 14px 16px;
+      }
+      .stat-label { font-size: 11.5px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+      .stat-value { font-size: 22px; font-weight: 600; margin-top: 4px; }
+      .stat-value.ok { color: var(--ok); }
+      .stat-value.warn { color: var(--warn); }
+      .stat-value.err { color: var(--err); }
+
+      .progress {
+        height: 6px;
+        background: var(--surface-2);
+        border-radius: 999px;
+        overflow: hidden;
+        margin-top: 10px;
+      }
+      .progress > div {
+        height: 100%;
+        background: linear-gradient(90deg, var(--ok), #6ed98b);
+        transition: width .4s ease;
+      }
+
+      .panel {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 16px 18px;
+      }
+      .panel-title { font-size: 13px; font-weight: 600; margin-bottom: 10px; color: var(--text-2); }
+      .discussion {
+        display: grid;
+        grid-template-columns: 14px 1fr auto;
+        gap: 10px;
+        align-items: start;
+        padding: 9px 0;
+        border-top: 1px solid var(--border);
+        font-size: 13px;
+      }
+      .discussion:first-of-type { border-top: none; padding-top: 0; }
+      .discussion .pip {
+        width: 9px; height: 9px; border-radius: 50%;
+        margin-top: 5px;
+      }
+      .pip.open { background: var(--err); box-shadow: 0 0 8px rgba(240, 106, 106, 0.5); }
+      .pip.resolved { background: var(--ok); }
+      .discussion .where {
+        color: var(--text-2); font-family: ui-monospace, monospace;
+        font-size: 12px;
+      }
+      .discussion .preview { color: var(--muted); font-size: 12px; margin-top: 3px; line-height: 1.45; }
+      .discussion .tag {
+        font-size: 10.5px;
+        padding: 2px 8px;
+        border-radius: 999px;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        font-weight: 600;
+      }
+      .tag.open { background: rgba(240, 106, 106, 0.15); color: var(--err); }
+      .tag.resolved { background: rgba(78, 196, 110, 0.15); color: var(--ok); }
+
+      .followups { display: flex; gap: 8px; flex-wrap: wrap; }
+
+      /* ============ TOAST ============ */
+      .toast-wrap {
+        position: fixed;
+        bottom: 20px; right: 24px;
+        display: flex; flex-direction: column; gap: 8px;
+        z-index: 100;
+        pointer-events: none;
+      }
+      .toast {
+        background: var(--bg-3);
+        border: 1px solid var(--border-strong);
+        border-radius: var(--radius-sm);
+        padding: 10px 14px;
+        font-size: 13px;
+        box-shadow: var(--shadow-lg);
+        animation: slidein .2s ease-out;
+        pointer-events: auto;
+        max-width: 320px;
+      }
+      .toast.err { border-color: rgba(240, 106, 106, 0.4); }
+      .toast.ok  { border-color: rgba(78, 196, 110, 0.4); }
+      @keyframes slidein { from { transform: translateX(20px); opacity: 0; } }
+
+      /* ============ LOADING ============ */
+      .skeleton {
+        max-width: 720px; margin: 0 auto;
+        display: flex; flex-direction: column; gap: 12px;
+      }
+      .sk {
+        background: linear-gradient(90deg, var(--surface), var(--surface-2), var(--surface));
+        background-size: 200% 100%;
+        animation: shine 1.5s ease-in-out infinite;
+        border-radius: var(--radius);
+        border: 1px solid var(--border);
+      }
+      .sk.h1 { height: 28px; width: 40%; }
+      .sk.bar { height: 80px; }
+      .sk.line { height: 14px; width: 100%; }
+      .sk.line.short { width: 60%; }
+      @keyframes shine { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+      /* ============ COMMAND PALETTE ============ */
+      .palette-bg {
+        position: fixed; inset: 0;
+        background: rgba(0, 0, 0, 0.55);
+        backdrop-filter: blur(6px);
+        display: none;
+        align-items: flex-start; justify-content: center;
+        padding-top: 14vh;
+        z-index: 200;
+      }
+      .palette-bg.open { display: flex; }
+      .palette {
+        width: min(560px, 92vw);
+        background: var(--bg-2);
+        border: 1px solid var(--border-strong);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow-lg);
+        overflow: hidden;
+      }
+      .palette input {
+        width: 100%;
+        background: transparent;
+        border: none;
+        outline: none;
+        padding: 16px 18px;
+        font-size: 15px;
+        color: var(--text);
+        border-bottom: 1px solid var(--border);
+      }
+      .palette-list { max-height: 360px; overflow-y: auto; padding: 6px; }
+      .palette-item {
+        display: flex; align-items: center; gap: 12px;
+        padding: 10px 12px;
+        border-radius: var(--radius-sm);
+        cursor: pointer;
+        font-size: 13.5px;
+      }
+      .palette-item.active, .palette-item:hover { background: var(--surface-2); }
+      .palette-item .ic { width: 28px; height: 28px; border-radius: 8px; background: var(--surface-2); display: grid; place-items: center; }
+      .palette-item .sub { color: var(--muted); font-size: 12px; }
+
+      .kbd-hint {
+        background: var(--surface-2); border: 1px solid var(--border);
+        border-radius: 6px; padding: 1px 6px;
+        font-family: ui-monospace, monospace;
+        font-size: 11px; color: var(--muted);
+      }
+
+      @media (max-width: 720px) {
+        .app { grid-template-columns: 1fr; }
+        aside { display: none; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <!-- ============ SIDEBAR ============ -->
+      <aside>
+        <div class="brand">
+          <div class="logo">RB</div>
+          <div>
+            <div class="brand-name">Review Bot</div>
+            <div class="brand-sub">GitLab MR reviewer</div>
+          </div>
+        </div>
+
+        <button class="new-btn" id="newReviewBtn">
+          <span>＋</span><span>New Action</span>
+        </button>
+
+        <div class="side-section">Recent</div>
+        <div class="recent-list" id="recentList"></div>
+
+        <div class="side-foot" id="sideFoot">
+          <span>v0.1.0</span>
+          <span><span class="kbd-hint">⌘K</span></span>
+        </div>
+      </aside>
+
+      <!-- ============ MAIN ============ -->
+      <main>
+        <div class="topbar">
+          <div class="crumbs" id="crumbs">
+            <span>Home</span>
+          </div>
+          <div class="top-actions">
+            <button class="icon-btn" id="paletteBtn" title="Command palette (⌘K)">⌘</button>
+            <button class="icon-btn" id="helpBtn" title="Help">?</button>
+          </div>
+        </div>
+        <div class="content" id="content"></div>
+      </main>
+    </div>
+
+    <!-- Command palette -->
+    <div class="palette-bg" id="paletteBg">
+      <div class="palette">
+        <input id="paletteInput" placeholder="Type a command or search…" autocomplete="off" />
+        <div class="palette-list" id="paletteList"></div>
+      </div>
+    </div>
+
+    <div class="toast-wrap" id="toasts"></div>
+
+    <script>
+      // =========================================================
+      // STATE
+      // =========================================================
+      const STORAGE_KEY = 'reviewbot.recent.v2';
+
+      function loadRecent() {
+        try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || { projects: [], history: [], mrs: {} }; }
+        catch { return { projects: [], history: [], mrs: {} }; }
+      }
+      function saveRecent(r) { localStorage.setItem(STORAGE_KEY, JSON.stringify(r)); }
+      function rememberProject(p) {
+        const r = loadRecent();
+        r.projects = [p, ...r.projects.filter((x) => x !== p)].slice(0, 8);
+        saveRecent(r);
+      }
+      function rememberMr(p, m) {
+        const r = loadRecent();
+        const list = r.mrs[p] || [];
+        r.mrs[p] = [Number(m), ...list.filter((x) => x !== Number(m))].slice(0, 6);
+        saveRecent(r);
+      }
+      function pushHistory(entry) {
+        const r = loadRecent();
+        r.history = [{ ...entry, ts: Date.now() }, ...r.history].slice(0, 20);
+        saveRecent(r);
+        renderSidebar();
+      }
+
+      const ACTIONS = {
+        review: { label: 'Review',  icon: '🤖', verb: 'Reviewing',  desc: 'Run AI review against the latest commit' },
+        status: { label: 'Status',  icon: '📊', verb: 'Loading',    desc: 'Show open vs resolved bot discussions' },
+        learn:  { label: 'Learn',   icon: '🧠', verb: 'Learning',   desc: 'Scan replies and propose guide updates' },
+      };
+
+      // =========================================================
+      // DOM HELPERS
+      // =========================================================
+      const $ = (id) => document.getElementById(id);
+      const content = $('content');
+      const crumbs = $('crumbs');
+
+      function esc(s) {
+        return String(s ?? '').replace(/[&<>]/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+      }
+
+      function setCrumbs(parts) {
+        crumbs.innerHTML = parts.map((p, i) => {
+          const cls = i === parts.length - 1 ? 'current' : '';
+          return `<span class="${cls}">${esc(p)}</span>` + (i < parts.length - 1 ? '<span class="sep">›</span>' : '');
+        }).join('');
+      }
+
+      function timeAgo(ts) {
+        const s = Math.floor((Date.now() - ts) / 1000);
+        if (s < 60) return 'now';
+        if (s < 3600) return Math.floor(s / 60) + 'm';
+        if (s < 86400) return Math.floor(s / 3600) + 'h';
+        return Math.floor(s / 86400) + 'd';
+      }
+
+      function toast(message, kind = '') {
+        const wrap = $('toasts');
+        const el = document.createElement('div');
+        el.className = 'toast ' + kind;
+        el.textContent = message;
+        wrap.appendChild(el);
+        setTimeout(() => { el.style.transition = 'opacity .3s'; el.style.opacity = '0'; }, 2800);
+        setTimeout(() => el.remove(), 3200);
+      }
+
+      // =========================================================
+      // SIDEBAR
+      // =========================================================
+      function renderSidebar() {
+        const { history } = loadRecent();
+        const list = $('recentList');
+        if (history.length === 0) {
+          list.innerHTML = `<div class="recent-item empty">No recent activity yet.<br/>Run a review to get started.</div>`;
+          return;
+        }
+        list.innerHTML = history.map((h) => `
+          <div class="recent-item" data-flow="${esc(h.flow)}" data-project="${esc(h.project)}" data-mr="${esc(h.mrIid)}">
+            <div class="recent-avatar">${ACTIONS[h.flow]?.icon ?? '•'}</div>
+            <div class="recent-meta">
+              <div class="recent-title">${esc(h.project.split('/').slice(-1)[0])} <span style="color:var(--muted);font-weight:400">!${esc(h.mrIid)}</span></div>
+              <div class="recent-sub">${esc(ACTIONS[h.flow]?.label ?? h.flow)} · ${esc(h.project)}</div>
+            </div>
+            <div class="recent-time">${timeAgo(h.ts)}</div>
+          </div>
+        `).join('');
+
+        list.querySelectorAll('.recent-item[data-flow]').forEach((el) => {
+          el.addEventListener('click', () => {
+            runFlow(el.dataset.flow, el.dataset.project, el.dataset.mr);
+          });
+        });
+      }
+
+      // =========================================================
+      // VIEWS
+      // =========================================================
+      function viewHome() {
+        setCrumbs(['Home']);
+        const r = loadRecent();
+        const greeting = r.history.length > 0 ? 'Welcome back' : 'Welcome to Review Bot';
+        const subline = r.history.length > 0
+          ? `You have ${r.projects.length} project${r.projects.length === 1 ? '' : 's'} in recent. Pick an action below or hit ⌘K.`
+          : `Powered by Liara AI. I review GitLab merge requests using your project's REVIEW_GUIDE.md.`;
+
+        content.innerHTML = `
+          <div class="hero">
+            <div class="hero-icon">🤖</div>
+            <h1>${esc(greeting)}</h1>
+            <p>${esc(subline)}</p>
+            <div class="quick-actions">
+              ${Object.entries(ACTIONS).map(([k, a]) => `
+                <button class="quick" data-flow="${k}">
+                  <div class="q-ic">${a.icon}</div>
+                  <div class="q-title">${a.label} an MR</div>
+                  <div class="q-sub">${a.desc}</div>
+                </button>
+              `).join('')}
+            </div>
+          </div>
+        `;
+        content.querySelectorAll('button[data-flow]').forEach((b) =>
+          b.addEventListener('click', () => viewForm(b.dataset.flow)),
+        );
+      }
+
+      function viewForm(initialFlow = 'review', prefill = {}) {
+        setCrumbs(['Home', 'New action']);
+        const r = loadRecent();
+        const recentProjects = r.projects;
+
+        content.innerHTML = `
+          <div class="card">
+            <div class="card-head">
+              <div class="card-icon primary">${ACTIONS[initialFlow].icon}</div>
+              <div>
+                <h2>New action</h2>
+                <div class="sub">Pick an action and tell me which MR.</div>
+              </div>
+            </div>
+
+            <div class="segmented" id="seg">
+              ${Object.entries(ACTIONS).map(([k, a]) => `
+                <button class="seg ${k === initialFlow ? 'active' : ''}" data-flow="${k}">
+                  <span>${a.icon}</span><span>${a.label}</span>
+                </button>
+              `).join('')}
+            </div>
+
+            <div class="field">
+              <label for="fProject">Project</label>
+              <input id="fProject" placeholder="group/repo or numeric ID" value="${esc(prefill.project ?? '')}" autocomplete="off" />
+              <div class="hint">Path like <code>coinbank1/frontend/app</code>, or a numeric project ID.</div>
+              ${recentProjects.length > 0 ? `
+                <div class="chips" id="projectChips">
+                  ${recentProjects.map((p) => `<button class="chip" data-val="${esc(p)}">${esc(p)}</button>`).join('')}
+                </div>` : ''}
+            </div>
+
+            <div class="field">
+              <label for="fMr">Merge request IID</label>
+              <input id="fMr" type="text" inputmode="numeric" placeholder="e.g. 42" value="${esc(prefill.mrIid ?? '')}" autocomplete="off" />
+              <div class="chips" id="mrChips"></div>
+            </div>
+
+            <div class="form-actions">
+              <button class="btn ghost" id="cancelForm">Cancel</button>
+              <button class="btn primary" id="runForm">
+                <span id="runLabel">Run ${ACTIONS[initialFlow].label}</span>
+              </button>
+            </div>
+          </div>
+        `;
+
+        let currentFlow = initialFlow;
+        const fProject = $('fProject');
+        const fMr = $('fMr');
+        const runLabel = $('runLabel');
+        const mrChips = $('mrChips');
+
+        function refreshMrChips() {
+          const list = loadRecent().mrs[fProject.value.trim()] || [];
+          mrChips.innerHTML = list.map((m) => `<button class="chip" data-mr="${m}">!${m}</button>`).join('');
+          mrChips.querySelectorAll('button').forEach((b) =>
+            b.addEventListener('click', () => { fMr.value = b.dataset.mr; fMr.focus(); }),
+          );
+        }
+        refreshMrChips();
+        fProject.addEventListener('input', refreshMrChips);
+
+        $('seg').querySelectorAll('.seg').forEach((s) =>
+          s.addEventListener('click', () => {
+            $('seg').querySelectorAll('.seg').forEach((x) => x.classList.remove('active'));
+            s.classList.add('active');
+            currentFlow = s.dataset.flow;
+            runLabel.textContent = `Run ${ACTIONS[currentFlow].label}`;
+            content.querySelector('.card-icon').textContent = ACTIONS[currentFlow].icon;
+          }),
+        );
+
+        content.querySelectorAll('#projectChips .chip').forEach((c) =>
+          c.addEventListener('click', () => { fProject.value = c.dataset.val; refreshMrChips(); fMr.focus(); }),
+        );
+
+        $('cancelForm').addEventListener('click', viewHome);
+        $('runForm').addEventListener('click', () => {
+          const project = fProject.value.trim();
+          const mrIid = fMr.value.trim().replace(/^!/, '');
+          if (!project) return toast('Project is required', 'err');
+          if (!/^\d+$/.test(mrIid)) return toast('MR IID must be a number', 'err');
+          runFlow(currentFlow, project, mrIid);
+        });
+
+        // Auto-focus first empty field
+        (prefill.project ? fMr : fProject).focus();
+
+        // Submit on Enter from MR field
+        fMr.addEventListener('keydown', (e) => { if (e.key === 'Enter') $('runForm').click(); });
+        fProject.addEventListener('keydown', (e) => { if (e.key === 'Enter') fMr.focus(); });
+      }
+
+      function viewLoading(flow, project, mrIid) {
+        setCrumbs(['Home', ACTIONS[flow].label, `${project} !${mrIid}`]);
+        content.innerHTML = `
+          <div class="result">
+            <div class="result-head">
+              <div class="card-icon primary">${ACTIONS[flow].icon}</div>
+              <div>
+                <h2>${ACTIONS[flow].verb} ${esc(project)} <span style="color:var(--muted);font-weight:500">!${esc(mrIid)}</span></h2>
+                <div class="sub">This may take a few seconds…</div>
+              </div>
+            </div>
+            <div class="skeleton">
+              <div class="sk h1"></div>
+              <div class="stat-row">
+                <div class="sk bar"></div>
+                <div class="sk bar"></div>
+                <div class="sk bar"></div>
+              </div>
+              <div class="sk line"></div>
+              <div class="sk line short"></div>
+              <div class="sk line"></div>
+            </div>
+          </div>
+        `;
+      }
+
+      function viewResult(flow, project, mrIid, res) {
+        setCrumbs(['Home', ACTIONS[flow].label, `${project} !${mrIid}`]);
+        const ctx = { flow, project, mrIid };
+
+        let body = '';
+        if (res?.kind === 'review') {
+          const r = res.result ?? {};
+          if (r.skipped) {
+            body = panelMessage('warn', `Skipped: ${r.skipped}`,
+              r.skipped === 'no-guide'
+                ? 'This project is missing <code>docs/REVIEW_GUIDE.md</code>. Add one and try again.'
+                : r.skipped === 'already-reviewed'
+                ? 'This commit was already reviewed. Push a new commit to re-trigger.'
+                : '');
+          } else {
+            const posted = r.posted ?? 0, total = r.total ?? 0;
+            const cached = r.cached ?? 0;
+            const aiCalls = r.aiCalls ?? 0;
+            const skippedFiles = r.skippedFiles ?? 0;
+            const tokens = r.tokens;
+            body = `
+              <div class="stat-row">
+                ${statCard('Posted', posted, posted > 0 ? 'ok' : '')}
+                ${statCard('Cached files', cached, cached > 0 ? 'ok' : '')}
+                ${statCard('AI calls', aiCalls)}
+                ${statCard('Tokens this run', tokens?.total ?? 0)}
+              </div>
+              <div class="panel">
+                <div class="panel-title">Token savings</div>
+                <div style="font-size:13px;color:var(--text-2);line-height:1.65">
+                  ${cached > 0
+                    ? `<b class="ok">${cached}</b> file(s) returned from the local cache — no tokens spent on them. `
+                    : ''}
+                  ${skippedFiles > 0
+                    ? `<b class="warn">${skippedFiles}</b> file(s) filtered out as noise (lockfiles, generated, binary). `
+                    : ''}
+                  ${aiCalls === 0
+                    ? `<b class="ok">Zero AI calls</b> — entire review served from cache.`
+                    : tokens
+                      ? `AI billed: <b>${tokens.prompt}</b> prompt + <b>${tokens.completion}</b> completion = <b>${tokens.total}</b> tokens.`
+                      : ''}
+                </div>
+              </div>
+              ${r.dedupSkipped > 0 ? `
+                <div class="panel">
+                  <div class="panel-title">Dedup</div>
+                  <div style="font-size:13px;color:var(--text-2)">Skipped <b>${r.dedupSkipped}</b> duplicate comment(s) already posted on this MR.</div>
+                </div>` : ''}
+            `;
+          }
+        } else if (res?.kind === 'refused') {
+          body = panelMessage('warn', 'Re-review blocked',
+            res.message + '<br/>Resolve all open bot discussions on the MR, then run Review again.');
+        } else if (res?.kind === 'status') {
+          if (res.total === 0) {
+            body = panelMessage('warn', 'No tracked discussions',
+              'Run <b>Review</b> on this MR first to create discussions I can track.');
+          } else {
+            const open = res.items.filter((i) => !i.resolved).length;
+            const resolved = res.total - open;
+            const pct = Math.round((resolved / res.total) * 100);
+            body = `
+              <div class="stat-row">
+                ${statCard('Total', res.total)}
+                ${statCard('Open', open, open > 0 ? 'err' : 'ok')}
+                ${statCard('Resolved', resolved, 'ok')}
+              </div>
+              <div class="panel">
+                <div class="panel-title">Resolution progress · ${pct}%</div>
+                <div class="progress"><div style="width:${pct}%"></div></div>
+              </div>
+              <div class="panel">
+                <div class="panel-title">Discussions</div>
+                ${res.items.map((it) => `
+                  <div class="discussion">
+                    <div class="pip ${it.resolved ? 'resolved' : 'open'}"></div>
+                    <div>
+                      <div class="where">${esc(it.file ?? '?')}<span style="color:var(--muted)">:${it.line ?? '?'}</span></div>
+                      <div class="preview">${esc((it.preview ?? '').slice(0, 180))}</div>
+                    </div>
+                    <span class="tag ${it.resolved ? 'resolved' : 'open'}">${it.resolved ? 'Resolved' : 'Open'}</span>
+                  </div>
+                `).join('')}
+              </div>
+            `;
+          }
+        } else if (res?.kind === 'learn') {
+          if (res.replies.length === 0) {
+            body = panelMessage('warn', 'No replies yet',
+              'There are no developer replies on the bot discussions for this MR.');
+          } else {
+            body = `
+              <div class="stat-row">
+                ${statCard('Replies scanned', res.replies.length)}
+                ${statCard('Guide updates opened', res.learned, res.learned > 0 ? 'ok' : '')}
+              </div>
+              <div class="panel">
+                <div class="panel-title">Decisions</div>
+                ${res.replies.map((rp) => `
+                  <div class="discussion">
+                    <div class="pip ${rp.learned ? 'resolved' : 'open'}"></div>
+                    <div>
+                      <div class="where">@${esc(rp.author ?? 'unknown')}</div>
+                      <div class="preview">${rp.learned ? `Proposed guide update — MR !${rp.mrIid}` : (rp.skipped ? `Skipped (${rp.skipped})` : 'No durable rule found.')}</div>
+                    </div>
+                    <span class="tag ${rp.learned ? 'resolved' : 'open'}">${rp.learned ? 'Learned' : 'Skip'}</span>
+                  </div>
+                `).join('')}
+              </div>
+            `;
+          }
+        } else if (res?.kind === 'no-discussions') {
+          body = panelMessage('warn', 'No discussions', res.message);
+        } else if (res?.ok === false) {
+          body = panelMessage('err', 'Failed', esc(res.message ?? 'Unknown error'));
+        } else {
+          body = `<div class="panel"><pre>${esc(JSON.stringify(res, null, 2))}</pre></div>`;
+        }
+
+        content.innerHTML = `
+          <div class="result">
+            <div class="result-head">
+              <div class="card-icon primary">${ACTIONS[flow].icon}</div>
+              <div>
+                <h2>${ACTIONS[flow].label} · ${esc(project.split('/').slice(-1)[0])} <span style="color:var(--muted);font-weight:500">!${esc(mrIid)}</span></h2>
+                <div class="sub">${esc(project)}</div>
+              </div>
+            </div>
+            ${body}
+            <div class="followups">
+              ${Object.entries(ACTIONS).filter(([k]) => k !== flow).map(([k, a]) => `
+                <button class="btn" data-rerun="${k}">${a.icon} Run ${a.label}</button>
+              `).join('')}
+              <button class="btn primary" id="newAction">＋ New action</button>
+            </div>
+          </div>
+        `;
+        content.querySelectorAll('button[data-rerun]').forEach((b) =>
+          b.addEventListener('click', () => runFlow(b.dataset.rerun, project, mrIid)),
+        );
+        $('newAction').addEventListener('click', () => viewForm('review'));
+      }
+
+      function statCard(label, value, kind = '') {
+        return `
+          <div class="stat">
+            <div class="stat-label">${esc(label)}</div>
+            <div class="stat-value ${kind}">${esc(value)}</div>
+          </div>`;
+      }
+
+      function panelMessage(kind, title, html) {
+        const color = kind === 'err' ? 'var(--err)' : kind === 'warn' ? 'var(--warn)' : 'var(--text)';
+        return `
+          <div class="panel">
+            <div class="panel-title" style="color:${color}">${esc(title)}</div>
+            <div style="font-size:13px;color:var(--text-2);line-height:1.55">${html}</div>
+          </div>`;
+      }
+
+      // =========================================================
+      // FLOW EXECUTION
+      // =========================================================
+      async function runFlow(flow, project, mrIid) {
+        rememberProject(project);
+        rememberMr(project, mrIid);
+        viewLoading(flow, project, mrIid);
+        try {
+          const r = await fetch('/api/command', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text: `/${flow} ${project} ${mrIid}` }),
+          });
+          const data = await r.json();
+          viewResult(flow, project, mrIid, data);
+          pushHistory({ flow, project, mrIid: Number(mrIid) });
+          if (data?.ok === false) toast(data.message || 'Failed', 'err');
+          else if (data?.kind === 'review' && !data.result?.skipped) toast('Review complete', 'ok');
+        } catch (err) {
+          toast('Network error: ' + err.message, 'err');
+          viewResult(flow, project, mrIid, { ok: false, message: err.message });
+        }
+      }
+
+      // =========================================================
+      // COMMAND PALETTE
+      // =========================================================
+      const palette = $('paletteBg');
+      const palInput = $('paletteInput');
+      const palList = $('paletteList');
+      let palActive = 0;
+
+      function paletteItems(query) {
+        const r = loadRecent();
+        const items = [
+          ...Object.entries(ACTIONS).map(([k, a]) => ({
+            ic: a.icon, title: `New ${a.label}`, sub: a.desc, run: () => viewForm(k),
+          })),
+          ...r.history.slice(0, 8).map((h) => ({
+            ic: ACTIONS[h.flow]?.icon ?? '•',
+            title: `${ACTIONS[h.flow]?.label ?? h.flow}: ${h.project} !${h.mrIid}`,
+            sub: `Re-run · ${timeAgo(h.ts)} ago`,
+            run: () => runFlow(h.flow, h.project, h.mrIid),
+          })),
+          { ic: '🏠', title: 'Home', sub: 'Go to start', run: viewHome },
+          { ic: '❔', title: 'Help', sub: 'Show command help', run: showHelp },
+        ];
+        if (!query) return items;
+        const q = query.toLowerCase();
+        return items.filter((i) => (i.title + ' ' + i.sub).toLowerCase().includes(q));
+      }
+
+      function renderPalette() {
+        const items = paletteItems(palInput.value);
+        palActive = Math.min(palActive, items.length - 1);
+        palList.innerHTML = items.map((i, idx) => `
+          <div class="palette-item ${idx === palActive ? 'active' : ''}" data-idx="${idx}">
+            <div class="ic">${i.ic}</div>
+            <div style="flex:1;min-width:0">
+              <div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(i.title)}</div>
+              <div class="sub">${esc(i.sub)}</div>
+            </div>
+          </div>
+        `).join('');
+        palList.querySelectorAll('.palette-item').forEach((el) =>
+          el.addEventListener('click', () => {
+            items[+el.dataset.idx].run();
+            closePalette();
+          }),
+        );
+      }
+
+      function openPalette() {
+        palette.classList.add('open');
+        palInput.value = '';
+        palActive = 0;
+        renderPalette();
+        setTimeout(() => palInput.focus(), 10);
+      }
+      function closePalette() { palette.classList.remove('open'); }
+
+      palInput.addEventListener('input', () => { palActive = 0; renderPalette(); });
+      palInput.addEventListener('keydown', (e) => {
+        const items = paletteItems(palInput.value);
+        if (e.key === 'ArrowDown') { palActive = (palActive + 1) % items.length; renderPalette(); e.preventDefault(); }
+        else if (e.key === 'ArrowUp') { palActive = (palActive - 1 + items.length) % items.length; renderPalette(); e.preventDefault(); }
+        else if (e.key === 'Enter') { items[palActive]?.run(); closePalette(); }
+        else if (e.key === 'Escape') closePalette();
+      });
+      palette.addEventListener('click', (e) => { if (e.target === palette) closePalette(); });
+
+      document.addEventListener('keydown', (e) => {
+        if ((e.metaKey || e.ctrlKey) && e.key === 'k') { e.preventDefault(); openPalette(); }
+        if (e.key === 'Escape') closePalette();
+      });
+      $('paletteBtn').addEventListener('click', openPalette);
+
+      // =========================================================
+      // HELP
+      // =========================================================
+      async function showHelp() {
+        setCrumbs(['Home', 'Help']);
+        const r = await fetch('/api/command', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text: '/help' }),
+        }).then((r) => r.json()).catch(() => ({ message: 'Failed to load help.' }));
+        content.innerHTML = `
+          <div class="card">
+            <div class="card-head">
+              <div class="card-icon">❔</div>
+              <div><h2>How it works</h2><div class="sub">Commands & tips</div></div>
+            </div>
+            <pre style="background:var(--bg-2);padding:14px;border-radius:10px;border:1px solid var(--border);overflow:auto">${esc(r.message ?? '')}</pre>
+            <div style="margin-top:14px;font-size:13px;color:var(--text-2);line-height:1.6">
+              • Press <span class="kbd-hint">⌘K</span> anywhere to open the quick switcher.<br/>
+              • Each project needs <code>docs/REVIEW_GUIDE.md</code> for the bot to act.<br/>
+              • Re-review only runs after every open bot discussion is resolved.
+            </div>
+            <div class="form-actions" style="margin-top:14px">
+              <button class="btn" id="helpBack">Back home</button>
+            </div>
+          </div>
+        `;
+        $('helpBack').addEventListener('click', viewHome);
+      }
+      $('helpBtn').addEventListener('click', showHelp);
+
+      // =========================================================
+      // INIT
+      // =========================================================
+      async function refreshFooterStats() {
+        try {
+          const s = await fetch('/api/stats').then((r) => r.json());
+          const tok = (s.prompt_tokens ?? 0) + (s.completion_tokens ?? 0);
+          const tokFmt = tok > 1000 ? (tok / 1000).toFixed(1) + 'k' : tok;
+          $('sideFoot').innerHTML = `
+            <span title="AI calls / cache hits">⚡ ${s.ai_calls ?? 0} · 💾 ${s.cache_hits_review ?? 0}</span>
+            <span title="Lifetime tokens used">${tokFmt} tok</span>
+          `;
+        } catch {}
+      }
+
+      $('newReviewBtn').addEventListener('click', () => viewForm('review'));
+      renderSidebar();
+      viewHome();
+      refreshFooterStats();
+      setInterval(refreshFooterStats, 15000);
+    </script>
+  </body>
+</html>
