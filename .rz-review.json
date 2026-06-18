@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "strictness": "high",
+  "paths": {
+    "guide": "docs/REVIEW_GUIDE.md",
+    "index": "docs/REVIEW_INDEX.md",
+    "contextDir": "docs/review"
+  },
+  "instructionPacks": [
+    "backend",
+    "baseline",
+    "frontend"
+  ],
+  "confidence": {
+    "inline": "high",
+    "summarize": "medium",
+    "drop": "low"
+  },
+  "automation": {
+    "enabled": false,
+    "targetBranchPolicy": []
+  },
+  "features": {
+    "deepIndex": false,
+    "commandProbe": false,
+    "fixBranch": false,
+    "applyFixes": false,
+    "externalBenchmark": false
+  }
+}

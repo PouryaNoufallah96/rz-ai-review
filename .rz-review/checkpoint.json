@@ -1,0 +1,349 @@
+{
+  "version": 1,
+  "contexts": [
+    "architecture",
+    "backend",
+    "conventions",
+    "domain",
+    "frontend",
+    "risk-map",
+    "security",
+    "testing",
+    "workflows"
+  ],
+  "files": {
+    ".env.example": {
+      "classification": "config",
+      "hash": "bdeeb07bd8f0bfcccd9810bf691b66ac0661d1bc2a3bbe1e27fce5faaf3204e5"
+    },
+    ".gitignore": {
+      "classification": "config",
+      "hash": "e1b2725cfcf84a0d66984e0df8543a6f1ba9ced49cdcdf41040a29856c6f3a3f"
+    },
+    ".rz-review.json": {
+      "classification": "config",
+      "hash": "de8ec1bcdc3d302ec850a5113d90ba4c9d464fff7ea55dd18edabed38019a7b6"
+    },
+    "AGENTS.md": {
+      "classification": "doc",
+      "hash": "791d981bf588d4e2977f686711454077857731f93bdf3627aa19a4b6604472d4"
+    },
+    "CLAUDE.md": {
+      "classification": "doc",
+      "hash": "e7f87dc07c3d5fcd703388783a21a0b4cf44b258699b08b02f140bde354f65c1"
+    },
+    "CONTEXT.md": {
+      "classification": "doc",
+      "hash": "d83d88a44f34cddd14bbc30fefcaf98f4f92694f544717bf5d16231f4f76679d"
+    },
+    "README.md": {
+      "classification": "doc",
+      "hash": "ece9b8c44fdebefefebbd6240e3a82d0d45349d320207ff386bf7c3ec71d003c"
+    },
+    "docs/REVIEW_GUIDE.example.md": {
+      "classification": "doc",
+      "hash": "be921e39002a145062f9d96fc025b5c12e5b19dc4e9e700cc34b5442f666f016"
+    },
+    "docs/REVIEW_GUIDE.md": {
+      "classification": "doc",
+      "hash": "c8655d6d73c05da91328a76845ad2ca7b9d06ac18106b9aece60f6ca615bfee8"
+    },
+    "docs/REVIEW_INDEX.md": {
+      "classification": "doc",
+      "hash": "014ca83b6f36a3d6ee9877077e99f5edb7ca71e74b4985d5b0a2012173889327"
+    },
+    "docs/adr/0001-use-target-project-owned-review-knowledge.md": {
+      "classification": "doc",
+      "hash": "71f5352e46e56feda90470152c1774d430bb852172c1a59a6cd995935cc503bf"
+    },
+    "docs/adr/0002-gate-inline-findings-by-confidence-and-explicit-verdict.md": {
+      "classification": "doc",
+      "hash": "98d04a79209c817871a46e18adee8c3ee34330cf328fdc03eb74756ba33d6568"
+    },
+    "docs/adr/0003-separate-local-review-memory-from-target-project-checkpoints.md": {
+      "classification": "doc",
+      "hash": "cc5d2e48cad0f5e552cdfe98994efe15fe4f0c51cf093666c4ed6e1c43b3b889"
+    },
+    "docs/adr/0004-make-review-quality-gate-the-default-posting-boundary.md": {
+      "classification": "doc",
+      "hash": "da5cbf51421ab28471900b5b06e74f6107780449bd35f883ca2b6f990d201660"
+    },
+    "docs/review/architecture.md": {
+      "classification": "doc",
+      "hash": "6ae87b7b2c3120b033270c5ab4965a87d6055855ba5ea1c29f95418055b52eb9"
+    },
+    "docs/review/backend.md": {
+      "classification": "doc",
+      "hash": "3d74eedf583e662ecbe737c469f167da0444f04f2576b75ecaea69626eba52a0"
+    },
+    "docs/review/conventions.md": {
+      "classification": "doc",
+      "hash": "9cd6ced7d3a4074cb9ff95c5c9dc848b54a891637169f0ac8cff17c6c66246ed"
+    },
+    "docs/review/domain.md": {
+      "classification": "doc",
+      "hash": "f3a366d0de394d67b6ba61312a35cfd9c7b7be5113c83ab737dcbe0d4864045a"
+    },
+    "docs/review/frontend.md": {
+      "classification": "doc",
+      "hash": "f177e6dfb1cbef754451c6369d58dfbf5c5e9e8e07ba530bff6a5def4dde6535"
+    },
+    "docs/review/reviewer-behavior.md": {
+      "classification": "doc",
+      "hash": "68e4df6fd306c10965c3a1486c3a32a6a5c487ae9d0aa5701b995b8489b7a01d"
+    },
+    "docs/review/risk-map.md": {
+      "classification": "doc",
+      "hash": "a348b5e1cb508827365ff6286d5d700b5c170ca6f9c75bc3bdf6dfa6eec08b1e"
+    },
+    "docs/review/security.md": {
+      "classification": "doc",
+      "hash": "0be2097896b43e9f31ba925cf002c0ac616d41cba73bcfab0506bbcb202019ff"
+    },
+    "docs/review/testing.md": {
+      "classification": "doc",
+      "hash": "bb4898634ca9f913fb748cec5bfe1e5160411658be843d1c93e81d67a7a70d0f"
+    },
+    "docs/review/workflows.md": {
+      "classification": "doc",
+      "hash": "ad5a2b6fb3a3406106c624b80df352d431018fcc19f55f551e4a4843f9ddd0da"
+    },
+    "package.json": {
+      "classification": "config",
+      "hash": "aa807c925469a3764e468bf9d5387bad9dd80c950c807ef15e35d5afb8339952"
+    },
+    "pnpm-lock.yaml": {
+      "classification": "config",
+      "hash": "7f6d4a7cb68e046e90f0a8c4555a688feb2bba58cac6fad6b754128d72a9fe30"
+    },
+    "public/index.html": {
+      "classification": "source",
+      "hash": "443241acfbc99d1cedf2d0f879a4a94f1cfbf39ff55e501bf02effbc56e683d9"
+    },
+    "skills-lock.json": {
+      "classification": "config",
+      "hash": "c6cc107c848258f25ee1d52d3c0317299ae4afdf666c850ae8d91d8061c1eb7f"
+    },
+    "src/cli.js": {
+      "classification": "source",
+      "hash": "ec72f3322b995c618637d6e5983c039342122fba0c3a1f879659728433ac74fc"
+    },
+    "src/config.js": {
+      "classification": "source",
+      "hash": "b78dabdd66c79e64061f61f8ec6a0e33a475c4e930e72b048a5f7ef08f94a11f"
+    },
+    "src/db/index.js": {
+      "classification": "source",
+      "hash": "a01b432ff208bc9c65888ec9e353f75751e3212bb2678bd7d24210cee6ae5fe2"
+    },
+    "src/defaults/instructionPacks.js": {
+      "classification": "source",
+      "hash": "b2ec9a83bee2dc5696f1ad3424ad7108a840a0b5e99411e6a5e3615e47026484"
+    },
+    "src/domain/events.js": {
+      "classification": "source",
+      "hash": "7c36b8747383b9f8e7aec70aa2d4b3219cb8b17b383bdb1e6a22632df30b796f"
+    },
+    "src/eslint.config.js": {
+      "classification": "source",
+      "hash": "1134edd60c7539d2df2f90e4ce9d90e7d3250abc957b491a0c3892ad62ec5ad5"
+    },
+    "src/index.js": {
+      "classification": "source",
+      "hash": "c81685b0b9a32d50bdabfd5ee34ea055ee36af44459bfbe516c28abfd4eab79c"
+    },
+    "src/lib/diff.js": {
+      "classification": "source",
+      "hash": "a7cd6088639600e4cce08d3d9c725fe84b2280e3efcb393bad93987980173c88"
+    },
+    "src/lib/filters.js": {
+      "classification": "source",
+      "hash": "80a430d72fcaf4a16bfc4c0a55e1db9e01c5c39b83d5e1c89d0783da4c8e945d"
+    },
+    "src/lib/hash.js": {
+      "classification": "source",
+      "hash": "0c11da3f22bb39f5bee75123efa607ea8e4d93828daf779e4072c8482de69dea"
+    },
+    "src/lib/logger.js": {
+      "classification": "source",
+      "hash": "62b5795e3c38b1ba6f44211683c1dc95d572babbbeffd30bb5d77eac81855aea"
+    },
+    "src/routes/api.js": {
+      "classification": "source",
+      "hash": "75d6590e9b03f742f2262ca7bbcdaa90783dc9094c3a9399fd32853c7bc34f09"
+    },
+    "src/routes/health.js": {
+      "classification": "source",
+      "hash": "aed5ecc6e4b31dfec2f20f2121bbf3f760a06093e09fb066b86f2b5a4b642e2a"
+    },
+    "src/routes/webhook.js": {
+      "classification": "source",
+      "hash": "df04b4f76f0bfae48f1b5e6bbf51ad65cd59ce93f694005710c23419ef562df4"
+    },
+    "src/server.js": {
+      "classification": "source",
+      "hash": "8e5077ebecf51af576d69b482318b6c0fc609560454f7222b8ab85af203ca141"
+    },
+    "src/services/ai.js": {
+      "classification": "source",
+      "hash": "ce11054c5f3d558e24746989ed1fd8b3dcf465be112cbf01061cadf8bd8e73bc"
+    },
+    "src/services/commands.js": {
+      "classification": "source",
+      "hash": "b6090070dde14f6b04308de661d35f65fe070cdf135a7094ba90036008f1e3d8"
+    },
+    "src/services/findingFingerprint.js": {
+      "classification": "source",
+      "hash": "70d2041914de0044c8197dc01746ca6522144d20b1ac66d7a1d2bb37be2028c0"
+    },
+    "src/services/gitlab.js": {
+      "classification": "source",
+      "hash": "d03e9950bc2443ac58d89e53f4a8c1a435cee29cafeeb38d6a9d839ce080fd01"
+    },
+    "src/services/guide.js": {
+      "classification": "source",
+      "hash": "67f7709c965866f619e1227fba2eaeefab1439562ac8a1e637ce41890110a8c8"
+    },
+    "src/services/learner.js": {
+      "classification": "source",
+      "hash": "70dba565421aad7aa9630870a40c1a242a8d34f5020c22d037998b5f3ca20a60"
+    },
+    "src/services/learningMemory.js": {
+      "classification": "source",
+      "hash": "7330b53d2b13e491af5c01b286519ad8902fe4f010b8bf17283cf611fa75cdfd"
+    },
+    "src/services/localReview.js": {
+      "classification": "source",
+      "hash": "0f3066fd3a013f4d38cc66a6c9326b4d5e75b190110d5dbe1ed6ded7495e1ee6"
+    },
+    "src/services/projectCheckpoint.js": {
+      "classification": "source",
+      "hash": "35b4d52ffdaf9766330fc191f7717db344c2bb6b0ce78444db319ed3218fbd5b"
+    },
+    "src/services/projectKnowledge.js": {
+      "classification": "source",
+      "hash": "8a8a222e5b161aa6f1231463876e5aca60df7218ac4a851de406ca8f7b0526d7"
+    },
+    "src/services/projectSetup.js": {
+      "classification": "source",
+      "hash": "0c37a5ddf04100b52a4e92d05a4f8cfb87fb30d9904ff39361e1641a446981c6"
+    },
+    "src/services/reviewAutomation.js": {
+      "classification": "source",
+      "hash": "12be8b5f6f5de1103c7f1c6f661728145b4bb8bf9ecf5a6e4c4e2383b8fed838"
+    },
+    "src/services/reviewConfig.js": {
+      "classification": "source",
+      "hash": "e26ecf5331a46e9086b6498d4fc041f6415149804550f9044b21b9b7fb664130"
+    },
+    "src/services/reviewGate.js": {
+      "classification": "source",
+      "hash": "35056c865d7d5ee81f88599778c2601fd1614c5804dd1f4abf5dc16041e6a0ec"
+    },
+    "src/services/reviewMemory.js": {
+      "classification": "source",
+      "hash": "386f531088494318bf562077592cb156ee52f2b9c7684ba5cbf28d840d9bd999"
+    },
+    "src/services/reviewPlan.js": {
+      "classification": "source",
+      "hash": "5809aded142e5cbcbf17dbb156c43d9d5fffb0b524adb76738fd25694083153e"
+    },
+    "src/services/reviewPrompt.js": {
+      "classification": "source",
+      "hash": "73c1aa4dd29911db91cfe65cb30f6d2d519e2a826df581e3aa9d9c365828578d"
+    },
+    "src/services/reviewVerdict.js": {
+      "classification": "source",
+      "hash": "567f0b6b06bff59541fe1e5fa8aa667dfd11b22fadf4efad6c7bb1ee514311f8"
+    },
+    "src/services/reviewer.js": {
+      "classification": "source",
+      "hash": "d7574b427341aa8efab106c982d03d03e2be92b98e93c0fbe022ad3ecba38812"
+    },
+    "test/cliDelegation.test.js": {
+      "classification": "test",
+      "hash": "0f975bf63b97751c7e93b7651f84e1e7eba31c9691e8bc909530d7a5f0a94158"
+    },
+    "test/findingFingerprint.test.js": {
+      "classification": "test",
+      "hash": "2bf9ae9969422eb8fb6f48f55b006a26857070ae4e81b779318840b27167ac75"
+    },
+    "test/instructionPacks.test.js": {
+      "classification": "test",
+      "hash": "945646b971a24de7ff34e93487547a056bac8a3e33bef01fb69ad36e6899d809"
+    },
+    "test/learningMemory.test.js": {
+      "classification": "test",
+      "hash": "16fd83e4902c6fc776d090befa3e489240eaef13c9d61741368b3c96b00317e7"
+    },
+    "test/localReview.test.js": {
+      "classification": "test",
+      "hash": "b1f408dd25fdfba256e80078f40080609852d7562fcf444152e279b8a2f9936a"
+    },
+    "test/projectCheckpoint.test.js": {
+      "classification": "test",
+      "hash": "bccba1e562690667e29cf4c8148b7807da3a207ccdef4e63a43df9e27e43b698"
+    },
+    "test/projectKnowledge.test.js": {
+      "classification": "test",
+      "hash": "0439dfb961cfabb380fc093e5f5e40c4dfb8464d57a007a4661a4b0f2e34d397"
+    },
+    "test/projectRefresh.test.js": {
+      "classification": "test",
+      "hash": "8ad5c8f77d5fd12cda90d039a8334af8733c317e3fcca7a472e72e881d4b4f6c"
+    },
+    "test/projectSetup.test.js": {
+      "classification": "test",
+      "hash": "31fcb4ab08a6d318ea15287cdd43a4c8521024ea4fd2d1c19a796ac59bf06b86"
+    },
+    "test/reviewAutomation.test.js": {
+      "classification": "test",
+      "hash": "78fb116021d613aea25c68e62a3eea4344fa3897708fe6bc19eadb6167dce626"
+    },
+    "test/reviewConfig.test.js": {
+      "classification": "test",
+      "hash": "2deb48ba06308cfb81618a0fec2d3703716007d6a47b8bd3c8eec7f623f1527b"
+    },
+    "test/reviewConfigLoader.test.js": {
+      "classification": "test",
+      "hash": "dcd4c3f2734a41198721327c2b1556ee4ea9fcabec579e6f75832b3651f19b0c"
+    },
+    "test/reviewGate.test.js": {
+      "classification": "test",
+      "hash": "eba028009080821c20d03679100adf72c9a695dc8541817b36a78bff5d2d55d7"
+    },
+    "test/reviewMemory.test.js": {
+      "classification": "test",
+      "hash": "0abb394bb641bf195cb72c97858335e5cf031f9b3cfa83795a1a9deb614d23da"
+    },
+    "test/reviewMetrics.test.js": {
+      "classification": "test",
+      "hash": "cef7edb888fd3f21eb65eb23f3924a4b76ba1d810ec121db199bfa1e7cc8a07b"
+    },
+    "test/reviewPlan.test.js": {
+      "classification": "test",
+      "hash": "8852607ce20bd12bcb25cf8af17cacf94be104bb103d5869b5ad9328800c8860"
+    },
+    "test/reviewVerdict.test.js": {
+      "classification": "test",
+      "hash": "976a5a1fcfca759fc54143238e696ef89998372f392dfb664ff2a4aed3511c83"
+    },
+    "test/storeMemory.test.js": {
+      "classification": "test",
+      "hash": "e260de31da3a248271ab9938ae1140d3364af5c78fa7c7bff38c5720c9bc0ee5"
+    }
+  },
+  "generatedDocs": {
+    "docs/REVIEW_GUIDE.md": "a1fb97d5c9d66318322bc7828a910c9a52b4419945d771a018811637aa12ccba",
+    "docs/REVIEW_INDEX.md": "3ccd98bc3f496e025ed166a6a30a8915a9ee7bb64dd2d48189774409cf4853de",
+    "docs/review/architecture.md": "a2f3fc042e34dc25af021a04e97327c26b30d4b2d199d9ecaa3f29e767c10ca4",
+    "docs/review/backend.md": "04eb4f948887364e0e4930e022846985f2034ae73caf93c3874decad0782ff52",
+    "docs/review/conventions.md": "fdb1710d0f7ed020adf0e63f229eb73e45a66344df4ad5b72db846754d6ad21b",
+    "docs/review/domain.md": "5b7dc4827b305520aed3f39e46d2da504c8d5e0c04443112bb8e3e9662ed5615",
+    "docs/review/frontend.md": "b79a8250c0079dfa3caf5f4e4354c5b5131634e0b1d50c841969bc42c51276de",
+    "docs/review/risk-map.md": "3adca32fa960ffb67506404272fa5451a717178e631c8a14a9f7dd42b06f7455",
+    "docs/review/security.md": "0024228b0468296f9f46c062b5249800aadbe00f35c766bdc132b2dc27e2d09c",
+    "docs/review/testing.md": "a3f00bd5f525fbc58631f06d1110f1b953acf5720406df11d10856ea0be22310",
+    "docs/review/workflows.md": "62cf733bad582cac9ea037f56ecb8b724e0e511fc99250891a8c88df1ca84ce7"
+  }
+}
