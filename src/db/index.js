@@ -1,6 +1,15 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { config } from '../config.js';
+import {
+  getFinding as memGetFinding,
+  isDuplicate as memIsDuplicate,
+  recordFinding as memRecordFinding,
+} from '../services/reviewMemory.js';
+import {
+  hasLesson as memHasLesson,
+  recordLesson as memRecordLesson,
+} from '../services/learningMemory.js';
 
 const dbPath = config.DB_PATH.replace(/\.db$/, '.json');
 fs.mkdirSync(path.dirname(dbPath), { recursive: true });
@@ -11,6 +20,8 @@ const empty = {
   bot_discussions: {},    // discussion_id -> { project_id, mr_iid, run_id, file_path, new_line, created_at }
   file_review_cache: {},  // hash -> { comments: [...], cached_at, hits }
   learn_cache: {},        // hash -> { decision, cached_at, hits }
+  review_memory: {},      // fingerprint -> { fingerprint, codeHash, status, ... } (Review Memory; local-only, ADR 0003)
+  learning_memory: {},    // lessonFingerprint -> { evidence_hash, ... } (Learning Memory; local-only, ADR 0003)
   posted_comments: {},    // `${project_id}:${mr_iid}` -> Set-like { [bodyHash]: true }
   usage_stats: {          // running counters
     ai_calls: 0,
@@ -20,12 +31,32 @@ const empty = {
     prompt_tokens: 0,
     completion_tokens: 0,
   },
+  // Review-quality metrics: COUNTERS ONLY (no code, finding bodies, or paths).
+  // Verdict distribution + finding-routing totals for tuning (RZ-57). Local.
+  review_metrics: {
+    runs: 0,
+    verdicts: {
+      approved: 0,
+      'issues-found': 0,
+      'needs-human-review': 0,
+      skipped: 0,
+    },
+    routing: {
+      posted: 0,
+      summarized: 0,
+      dropped: 0,
+      redundant: 0,
+      duplicate: 0,
+    },
+  },
   _seq: { run_id: 0 },
 };
 
 const LIMITS = {
   file_review_cache: 1000,
   learn_cache: 500,
+  review_memory: 5000,
+  learning_memory: 2000,
 };
 
 function load() {
@@ -41,8 +72,21 @@ const state = load();
 // Migrate older state files
 state.file_review_cache ??= {};
 state.learn_cache ??= {};
+state.review_memory ??= {};
+state.learning_memory ??= {};
 state.posted_comments ??= {};
 state.usage_stats ??= { ...empty.usage_stats };
+// Migrate review_metrics, deep-filling any counters older state files lack.
+state.review_metrics ??= structuredClone(empty.review_metrics);
+state.review_metrics.runs ??= 0;
+state.review_metrics.verdicts = {
+  ...empty.review_metrics.verdicts,
+  ...state.review_metrics.verdicts,
+};
+state.review_metrics.routing = {
+  ...empty.review_metrics.routing,
+  ...state.review_metrics.routing,
+};
 
 let writeTimer = null;
 function persist() {
@@ -59,12 +103,18 @@ function persistNow() {
   fs.writeFileSync(dbPath, JSON.stringify(state, null, 2));
 }
 
-function evictIfOversized(bucket, limit) {
+function evictIfOversized(bucket, limit, recencyFields = ['cached_at']) {
   const obj = state[bucket];
   const keys = Object.keys(obj);
   if (keys.length <= limit) return;
+  const recencyOf = (rec) => {
+    for (const f of recencyFields) {
+      if (rec?.[f] != null) return rec[f];
+    }
+    return 0;
+  };
   const sorted = keys
-    .map((k) => [k, obj[k].cached_at ?? 0])
+    .map((k) => [k, recencyOf(obj[k])])
     .sort((a, b) => a[1] - b[1]);
   const dropCount = keys.length - limit + Math.floor(limit * 0.1);
   for (let i = 0; i < dropCount; i++) delete obj[sorted[i][0]];
@@ -159,6 +209,33 @@ export const store = {
     persist();
   },
 
+  // --- Review Memory (Finding Fingerprints; local-only, ADR 0003) ---
+  getFinding(fingerprint) {
+    return memGetFinding(state.review_memory, fingerprint);
+  },
+  // Duplicate Finding: same fingerprint AND unchanged affected code (codeHash).
+  isDuplicateFinding({ fingerprint, codeHash }) {
+    return memIsDuplicate(state.review_memory, { fingerprint, codeHash });
+  },
+  recordFinding(record) {
+    memRecordFinding(state.review_memory, record);
+    evictIfOversized('review_memory', LIMITS.review_memory, ['last_seen', 'first_seen']);
+    persist();
+  },
+
+  // --- Learning Memory (proposed lessons; local-only, ADR 0003) ---
+  hasLesson({ fingerprint, evidenceHash }) {
+    return memHasLesson(state.learning_memory, { fingerprint, evidenceHash });
+  },
+  recordLesson(record) {
+    memRecordLesson(state.learning_memory, record);
+    evictIfOversized('learning_memory', LIMITS.learning_memory, [
+      'last_proposed',
+      'first_proposed',
+    ]);
+    persist();
+  },
+
   // --- posted comment dedup (per MR) ---
   isPosted({ projectId, mrIid, bodyHash }) {
     const k = `${projectId}:${mrIid}`;
@@ -179,6 +256,32 @@ export const store = {
   getStats() {
     return { ...state.usage_stats };
   },
+
+  // --- review-quality metrics (counters only; local-only, RZ-57) ---
+  // Increments the run count, the verdict distribution, and (when present) the
+  // finding-routing totals. Tolerant of a missing/partial breakdown.
+  recordReviewMetrics({ verdict, breakdown } = {}) {
+    const m = state.review_metrics;
+    m.runs += 1;
+    if (verdict && verdict in m.verdicts) {
+      m.verdicts[verdict] += 1;
+    }
+    if (breakdown) {
+      for (const key of Object.keys(m.routing)) {
+        const n = breakdown[key];
+        if (typeof n === 'number') m.routing[key] += n;
+      }
+    }
+    persist();
+  },
+  getReviewMetrics() {
+    return {
+      runs: state.review_metrics.runs,
+      verdicts: { ...state.review_metrics.verdicts },
+      routing: { ...state.review_metrics.routing },
+    };
+  },
+
   flush() { persistNow(); },
 };
 

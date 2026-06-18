@@ -1,10 +1,8 @@
-import { store } from '../db/index.js';
-import { gitlab, listDiscussions } from './gitlab.js';
-import { reviewMergeRequest } from './reviewer.js';
-import { maybeLearnFromReply } from './learner.js';
+import { setupProjectReview } from './projectSetup.js';
 
 async function resolveProjectId(input) {
   if (/^\d+$/.test(input)) return Number(input);
+  const { gitlab } = await import('./gitlab.js');
   const project = await gitlab.Projects.show(input);
   return project.id;
 }
@@ -17,6 +15,11 @@ function isAllResolved(discussions, trackedIds) {
 }
 
 export async function runReview({ project, mrIid }) {
+  const [{ store }, { listDiscussions }, { reviewMergeRequest }] = await Promise.all([
+    import('../db/index.js'),
+    import('./gitlab.js'),
+    import('./reviewer.js'),
+  ]);
   const projectId = await resolveProjectId(project);
   const mrIidNum = Number(mrIid);
   const tracked = store.listDiscussionsForMr({ projectId, mrIid: mrIidNum });
@@ -43,6 +46,10 @@ export async function runReview({ project, mrIid }) {
 }
 
 export async function runStatus({ project, mrIid }) {
+  const [{ store }, { listDiscussions }] = await Promise.all([
+    import('../db/index.js'),
+    import('./gitlab.js'),
+  ]);
   const projectId = await resolveProjectId(project);
   const mrIidNum = Number(mrIid);
   const tracked = store.listDiscussionsForMr({ projectId, mrIid: mrIidNum });
@@ -68,6 +75,11 @@ export async function runStatus({ project, mrIid }) {
 }
 
 export async function runLearn({ project, mrIid }) {
+  const [{ store }, { listDiscussions }, { maybeLearnFromReply }] = await Promise.all([
+    import('../db/index.js'),
+    import('./gitlab.js'),
+    import('./learner.js'),
+  ]);
   const projectId = await resolveProjectId(project);
   const mrIidNum = Number(mrIid);
   const tracked = store.listDiscussionsForMr({ projectId, mrIid: mrIidNum });
@@ -97,4 +109,17 @@ export async function runLearn({ project, mrIid }) {
   }
   const learned = replies.filter((r) => r.learned).length;
   return { ok: true, kind: 'learn', learned, replies };
+}
+
+export function runSetupReview({ targetPath, localOnly = false }) {
+  return setupProjectReview({ targetPath, mode: 'setup', localOnly });
+}
+
+export function runRefreshReview({ targetPath, localOnly = false }) {
+  return setupProjectReview({ targetPath, mode: 'refresh', localOnly });
+}
+
+export async function runLocalReview({ targetPath, base }) {
+  const { reviewLocalProject } = await import('./localReview.js');
+  return reviewLocalProject({ targetPath, base });
 }

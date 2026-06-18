@@ -4,9 +4,34 @@ import { logger } from '../lib/logger.js';
 import { listDiscussions } from '../services/gitlab.js';
 import { reviewMergeRequest } from '../services/reviewer.js';
 import { maybeLearnFromReply } from '../services/learner.js';
+import { loadReviewConfig } from '../services/projectKnowledge.js';
+import { shouldAutomate } from '../services/reviewAutomation.js';
 
 function isFromBot(user) {
   return user?.username === config.GITLAB_BOT_USERNAME;
+}
+
+// The MR target branch can arrive on an MR hook (object_attributes) or a Note
+// hook (merge_request); read whichever is present.
+function targetBranchOf(payload) {
+  return (
+    payload.object_attributes?.target_branch ?? payload.merge_request?.target_branch
+  );
+}
+
+// Review Automation gate: webhook-triggered review is opt-in per Target Project
+// (Review Config `automation.enabled`) and constrained by the Target Branch
+// Policy. Returns { allowed, reason }. Manual CLI/API review is NOT gated here.
+async function automationGate({ projectId, targetBranch, defaultBranch }) {
+  const reviewConfig = await loadReviewConfig({
+    projectId,
+    ref: targetBranch,
+  });
+  return shouldAutomate({
+    automation: reviewConfig?.automation,
+    targetBranch,
+    defaultBranch,
+  });
 }
 
 export async function handleMergeRequestEvent(payload) {
@@ -22,6 +47,19 @@ export async function handleMergeRequestEvent(payload) {
     if (action === 'update' && !payload.object_attributes?.oldrev) {
       return { skipped: 'non-code-update' };
     }
+
+    // Opt-in Review Automation: gate on the Target Project Review Config +
+    // Target Branch Policy before any webhook-triggered review.
+    const gate = await automationGate({
+      projectId,
+      targetBranch: targetBranchOf(payload),
+      defaultBranch: payload.project?.default_branch,
+    });
+    if (!gate.allowed) {
+      logger.info({ projectId, mrIid, reason: gate.reason }, 'Automation skipped review');
+      return { skipped: gate.reason };
+    }
+
     return reviewMergeRequest({ projectId, mrIid, reason: action });
   }
   return { skipped: `unhandled-action:${action}` };
@@ -69,6 +107,17 @@ export async function maybeRereviewOnResolution(payload) {
   if (!allResolved) {
     logger.info({ projectId, mrIid }, 'Not all bot discussions resolved; skipping re-review');
     return { skipped: 'unresolved' };
+  }
+
+  // Auto re-review is also Review Automation: opt-in + Target Branch Policy.
+  const gate = await automationGate({
+    projectId,
+    targetBranch: targetBranchOf(payload),
+    defaultBranch: payload.project?.default_branch,
+  });
+  if (!gate.allowed) {
+    logger.info({ projectId, mrIid, reason: gate.reason }, 'Automation skipped re-review');
+    return { skipped: gate.reason };
   }
 
   logger.info({ projectId, mrIid }, 'All bot discussions resolved; re-reviewing');

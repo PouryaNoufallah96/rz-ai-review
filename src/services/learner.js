@@ -6,6 +6,10 @@ import { gitlab } from './gitlab.js';
 import { loadGuide } from './guide.js';
 import { isTrivialReply } from '../lib/filters.js';
 import { sha256 } from '../lib/hash.js';
+import {
+  lessonFingerprint,
+  evidenceHash,
+} from './learningMemory.js';
 
 // STABLE — keep as prefix for provider-side caching.
 const LEARN_SYSTEM = `You evaluate developer replies on AI code review comments.
@@ -75,6 +79,27 @@ ${noteBody}`,
     return { learned: false, reason: decision.reason, fromCache: Boolean(cached), tokens: usage };
   }
 
+  // ---- Learning Memory: skip re-proposing a lesson already proposed unless the
+  // evidence changed. Keyed by a lesson fingerprint over the normalized
+  // guidePatch + file/failureMode context — NOT the guide sha — so a guide edit
+  // alone does not cause the same lesson to be re-proposed (RZ-58). Local-only.
+  const lessonFp = lessonFingerprint({
+    guidePatch: decision.guidePatch,
+    file: tracked.file_path,
+    failureMode: decision.reason,
+  });
+  const evHash = evidenceHash({ body: noteBody });
+  if (store.hasLesson({ fingerprint: lessonFp, evidenceHash: evHash })) {
+    logger.info({ projectId, mrIid }, 'Lesson already proposed; skipping guide-update MR');
+    return {
+      learned: false,
+      skipped: 'already-proposed',
+      reason: decision.reason,
+      fromCache: Boolean(cached),
+      tokens: usage,
+    };
+  }
+
   // ---- Open guide-update MR (idempotent enough — branches include MR + timestamp) ----
   const project = await gitlab.Projects.show(projectId);
   const defaultBranch = project.default_branch;
@@ -101,6 +126,15 @@ ${noteBody}`,
       removeSourceBranch: true,
     },
   );
+
+  // Record the proposed lesson so the same lesson (with the same evidence) is not
+  // re-proposed on future replies, even across guide-sha changes. Local-only.
+  store.recordLesson({
+    fingerprint: lessonFp,
+    evidenceHash: evHash,
+    mrIid,
+    file: tracked.file_path,
+  });
 
   return { learned: true, mrIid: learnMr.iid, fromCache: Boolean(cached), tokens: usage };
 }

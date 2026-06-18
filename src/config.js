@@ -6,10 +6,10 @@ const schema = z.object({
   HOST: z.string().default('0.0.0.0'),
   LOG_LEVEL: z.string().default('info'),
 
-  GITLAB_HOST: z.string().url(),
-  GITLAB_TOKEN: z.string().min(1),
+  GITLAB_HOST: z.string().url().optional(),
+  GITLAB_TOKEN: z.string().min(1).optional(),
   GITLAB_WEBHOOK_SECRET: z.string().optional(),
-  GITLAB_BOT_USERNAME: z.string().min(1),
+  GITLAB_BOT_USERNAME: z.string().min(1).optional(),
 
   AI_BASE_URL: z.string().url(),
   AI_API_KEY: z.string().min(1),
@@ -27,3 +27,18 @@ if (!parsed.success) {
 }
 
 export const config = parsed.data;
+
+export function requireGitLabConfig() {
+  const missing = [];
+  if (!config.GITLAB_HOST) missing.push("GITLAB_HOST");
+  if (!config.GITLAB_TOKEN) missing.push("GITLAB_TOKEN");
+  if (!config.GITLAB_BOT_USERNAME) missing.push("GITLAB_BOT_USERNAME");
+  if (missing.length > 0) {
+    throw new Error(`Missing GitLab environment configuration: ${missing.join(", ")}`);
+  }
+  return {
+    host: config.GITLAB_HOST,
+    token: config.GITLAB_TOKEN,
+    botUsername: config.GITLAB_BOT_USERNAME,
+  };
+}

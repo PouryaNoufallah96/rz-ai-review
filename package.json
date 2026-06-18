@@ -9,9 +9,13 @@
     "start": "node src/index.js",
     "dev": "node --watch src/index.js",
     "review": "node src/cli.js review",
+    "review-local": "node src/cli.js review-local",
     "learn": "node src/cli.js learn",
     "status": "node src/cli.js status",
-    "lint": "eslint src",
+    "setup-review": "node src/cli.js setup-review",
+    "refresh-review": "node src/cli.js refresh-review",
+    "lint": "eslint src --config src/eslint.config.js",
+    "test": "node --test \"test/**/*.test.js\"",
     "format": "prettier --write \"src/**/*.js\""
   },
   "engines": {

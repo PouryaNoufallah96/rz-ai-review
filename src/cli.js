@@ -1,126 +1,139 @@
 #!/usr/bin/env node
-import { store } from './db/index.js';
-import { logger } from './lib/logger.js';
-import { reviewMergeRequest } from './services/reviewer.js';
-import { maybeLearnFromReply } from './services/learner.js';
-import { listDiscussions } from './services/gitlab.js';
+// Thin CLI entry point. It DELEGATES every command to the shared services in
+// src/services/commands.js — the same functions the API command route and (for
+// review) the webhook path use. The CLI owns only argument parsing, human
+// readable console output, and process exit codes; it re-implements no review,
+// status, learn, or setup logic (RZ-56 command alignment).
+import {
+  runLearn,
+  runLocalReview,
+  runRefreshReview,
+  runReview,
+  runSetupReview,
+  runStatus,
+} from './services/commands.js';
 
 function usage() {
   console.log(`Usage:
   npm run review  -- <projectId|namespace/path> <mrIid>     Review or re-review an MR
+  npm run review-local -- <path> [baseRef]                  Review a local diff without GitLab
   npm run learn   -- <projectId|namespace/path> <mrIid>     Scan replies and propose guide updates
   npm run status  -- <projectId|namespace/path> <mrIid>     Show bot discussions & resolution state
+  npm run setup-review   -- <path> [--local]                Create shared review docs in a target project
+  npm run refresh-review -- <path> [--local]                Refresh generated review docs
 
 Examples:
   npm run review -- mygroup/myrepo 42
   npm run review -- 12345 42
+  npm run setup-review -- /path/to/project
+  npm run setup-review -- /path/to/project --local
+  npm run review-local -- /path/to/project origin/main
 `);
 }
 
-async function resolveProjectId(input) {
-  if (/^\d+$/.test(input)) return Number(input);
-  const { gitlab } = await import('./services/gitlab.js');
-  const project = await gitlab.Projects.show(input);
-  return project.id;
-}
-
 async function cmdReview(projectArg, mrIidArg) {
-  const projectId = await resolveProjectId(projectArg);
-  const mrIid = Number(mrIidArg);
-
-  const tracked = store.listDiscussionsForMr({ projectId, mrIid });
-  if (tracked.length > 0) {
-    // Re-review path: only proceed if all bot discussions are resolved
-    const trackedIds = new Set(tracked.map((r) => r.discussion_id));
-    const discussions = await listDiscussions({ projectId, mrIid });
-    const relevant = discussions.filter((d) => trackedIds.has(String(d.id)));
-    const allResolved = relevant.every((d) =>
-      (d.notes ?? []).every((n) => n.system || n.resolvable === false || n.resolved),
-    );
-    if (!allResolved) {
-      console.error('Refusing to re-review: not all bot-opened discussions are resolved.');
-      console.error('Resolve them on the MR, then run again.');
-      process.exit(2);
-    }
-    console.log('All bot discussions resolved — running re-review against new HEAD.');
+  const res = await runReview({ project: projectArg, mrIid: mrIidArg });
+  if (!res.ok && res.kind === 'refused') {
+    // Re-review refusal: bot discussions are still unresolved. Preserve the
+    // historical non-zero exit so scripts/CI can detect the refusal.
+    console.error(`Refusing to re-review: ${res.message}`);
+    process.exit(2);
   }
-
-  const result = await reviewMergeRequest({ projectId, mrIid, reason: 'manual' });
-  console.log(JSON.stringify(result, null, 2));
+  console.log(JSON.stringify(res.result ?? res, null, 2));
 }
 
 async function cmdLearn(projectArg, mrIidArg) {
-  const projectId = await resolveProjectId(projectArg);
-  const mrIid = Number(mrIidArg);
-
-  const tracked = store.listDiscussionsForMr({ projectId, mrIid });
-  if (tracked.length === 0) {
-    console.log('No bot discussions on this MR. Run `review` first.');
+  const res = await runLearn({ project: projectArg, mrIid: mrIidArg });
+  if (!res.ok) {
+    console.log(res.message);
     return;
   }
-  const trackedIds = new Set(tracked.map((r) => r.discussion_id));
-  const discussions = await listDiscussions({ projectId, mrIid });
-
-  let proposed = 0;
-  for (const d of discussions) {
-    if (!trackedIds.has(String(d.id))) continue;
-    const replies = (d.notes ?? []).filter((n) => !n.system).slice(1); // skip the bot's own first note
-    for (const reply of replies) {
-      const res = await maybeLearnFromReply({
-        projectId,
-        mrIid,
-        discussionId: String(d.id),
-        noteBody: reply.body,
-        noteAuthor: reply.author?.username,
-      });
-      console.log(`reply by ${reply.author?.username}:`, res);
-      if (res?.learned) proposed += 1;
-    }
+  for (const reply of res.replies) {
+    const { author, ...rest } = reply;
+    console.log(`reply by ${author}:`, rest);
   }
-  console.log(`\nDone. Guide-update MRs opened: ${proposed}`);
+  console.log(`\nDone. Guide-update MRs opened: ${res.learned}`);
 }
 
 async function cmdStatus(projectArg, mrIidArg) {
-  const projectId = await resolveProjectId(projectArg);
-  const mrIid = Number(mrIidArg);
-
-  const tracked = store.listDiscussionsForMr({ projectId, mrIid });
-  if (tracked.length === 0) {
+  const res = await runStatus({ project: projectArg, mrIid: mrIidArg });
+  if (res.total === 0) {
     console.log('No bot discussions tracked for this MR.');
     return;
   }
-  const trackedIds = new Set(tracked.map((r) => r.discussion_id));
-  const discussions = await listDiscussions({ projectId, mrIid });
-  const relevant = discussions.filter((d) => trackedIds.has(String(d.id)));
-
-  console.log(`Bot discussions on MR !${mrIid}: ${relevant.length}`);
-  for (const d of relevant) {
-    const firstNote = d.notes?.[0];
-    const resolved = (d.notes ?? []).every(
-      (n) => n.system || n.resolvable === false || n.resolved,
-    );
+  console.log(`Bot discussions on MR !${mrIidArg}: ${res.total}`);
+  for (const item of res.items) {
     console.log(
-      `  [${resolved ? 'RESOLVED' : 'OPEN'}] ${firstNote?.position?.new_path ?? '?'}:${firstNote?.position?.new_line ?? '?'} — ${(firstNote?.body ?? '').slice(0, 80)}`,
+      `  [${item.resolved ? 'RESOLVED' : 'OPEN'}] ${item.file ?? '?'}:${item.line ?? '?'} — ${(item.preview ?? '').slice(0, 80)}`,
     );
   }
 }
 
-const [, , cmd, projectArg, mrIidArg] = process.argv;
+function isLocalOnlyFlag(flag) {
+  return flag === '--local' || flag === '--private';
+}
 
-if (!cmd || !projectArg || !mrIidArg) {
+function rejectUnknownFlags(flags) {
+  const unknown = flags.filter((flag) => !isLocalOnlyFlag(flag));
+  if (unknown.length > 0) {
+    throw new Error(`Unknown option(s): ${unknown.join(', ')}`);
+  }
+}
+
+function cmdSetupReview(targetPath, ...flags) {
+  rejectUnknownFlags(flags);
+  console.log(
+    JSON.stringify(
+      runSetupReview({ targetPath, localOnly: flags.some(isLocalOnlyFlag) }),
+      null,
+      2,
+    ),
+  );
+}
+
+function cmdRefreshReview(targetPath, ...flags) {
+  rejectUnknownFlags(flags);
+  console.log(
+    JSON.stringify(
+      runRefreshReview({ targetPath, localOnly: flags.some(isLocalOnlyFlag) }),
+      null,
+      2,
+    ),
+  );
+}
+
+async function cmdReviewLocal(targetPath, base) {
+  const res = await runLocalReview({ targetPath, base });
+  console.log(JSON.stringify(res, null, 2));
+}
+
+const [, , cmd, ...rawArgs] = process.argv;
+const args = rawArgs[0] === '--' ? rawArgs.slice(1) : rawArgs;
+
+if (!cmd) {
   usage();
   process.exit(1);
 }
 
-const commands = { review: cmdReview, learn: cmdLearn, status: cmdStatus };
+const commands = {
+  review: { handler: cmdReview, arity: 2 },
+  'review-local': { handler: cmdReviewLocal, arity: 1 },
+  learn: { handler: cmdLearn, arity: 2 },
+  status: { handler: cmdStatus, arity: 2 },
+  'setup-review': { handler: cmdSetupReview, arity: 1 },
+  'refresh-review': { handler: cmdRefreshReview, arity: 1 },
+};
 const handler = commands[cmd];
 if (!handler) {
   usage();
   process.exit(1);
 }
+if (args.length < handler.arity) {
+  usage();
+  process.exit(1);
+}
 
-handler(projectArg, mrIidArg).catch((err) => {
-  logger.error({ err: err?.message, stack: err?.stack }, 'CLI failed');
+Promise.resolve(handler.handler(...args)).catch((err) => {
   console.error(err?.message ?? err);
   process.exit(1);
 });
